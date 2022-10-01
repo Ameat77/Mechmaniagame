@@ -16,9 +16,9 @@ class RandomStrategy(Strategy):
         player = game_state.player_state_list[my_player_index]
         dx = Random().randint(0, player.stat_set.speed)
         dy = player.stat_set.speed - dx
-        if random() < 0.5 and player.position.x - dx >= 0:
+        if Random().randint(0, 1) == 0 and player.position.x - dx >= 0:
             dx = -dx
-        if random() < 0.5 and player.position.y - dy >= 0:
+        if Random().randint(0, 1) == 0 and player.position.y - dy >= 0:
             dy = -dy
         if player.position.x + dx > 9:
             dx = -dx
