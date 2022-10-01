@@ -6,7 +6,9 @@ from abc import abstractmethod
 from game.item import Item
 
 from game.position import Position
+import player
 from strategy.strategy import Strategy
+from game.character_class import CharacterClass
 
 
 class DumbKnightStrategy(Strategy):
@@ -42,21 +44,24 @@ class DumbKnightStrategy(Strategy):
     :returns: A game.Position object.
     """
 
-    def possible_moves_knight(x, y, speed):
-        moves = []
-        for i in range(-1, 2):
-            for j in range(-1, 2):
-                new_pos = (x + i, y + j)
-                if new_pos[0] > -1 and new_pos[0] < 10 and new_pos[1] > -1 and new_pos[1] < 10:
-                    moves.append(new_pos)
-        if x + 2 < 10:
-            moves.append((x + 2, y))
-        if x - 2 >= 0:
-            moves.append((x - 2, y))
-        if y + 2 < 10:
-            moves.append((x, y + 2))
-        if y - 2 >= 0:
-            moves.append((x, y - 2))
+    def possible_moves(x, y, speed):
+        moves = set()
+        pairs = []
+        for i in range(speed + 1):
+            pairs.append((i, speed - i))
+        for i in range(len(pairs)):
+            new_pos = (x + pairs[i][0], y + pairs[i][1])
+            if new_pos[0] >= 0 and new_pos[0] < 10 and new_pos[1] >= 0 and new_pos[1] < 10:
+                moves.add(new_pos)
+            new_pos = (x - pairs[i][0], y - pairs[i][1])
+            if new_pos[0] >= 0 and new_pos[0] < 10 and new_pos[1] >= 0 and new_pos[1] < 10:
+                moves.add(new_pos)
+            new_pos = (x - pairs[i][0], y + pairs[i][1])
+            if new_pos[0] >= 0 and new_pos[0] < 10 and new_pos[1] >= 0 and new_pos[1] < 10:
+                moves.add(new_pos)
+            new_pos = (x + pairs[i][0], y - pairs[i][1])
+            if new_pos[0] >= 0 and new_pos[0] < 10 and new_pos[1] >= 0 and new_pos[1] < 10:
+                moves.add(new_pos)
         return moves
                     
 
@@ -64,21 +69,41 @@ class DumbKnightStrategy(Strategy):
         center = (4.5, 4.5)
         best_move = (-1, -1)
         lowest = 1000
-        for i in range(len(moves)):
-            dd = (abs(center[0] - float(moves[i][0])), abs(center[1] - float(moves[i][1])))
+        for move in moves:
+            dd = (abs(center[0] - float(move[0])), abs(center[1] - float(move[1])))
             d = pow(dd[0], 2) + pow(dd[1], 2)
             if d < lowest:
                 lowest = d
-                best_move = moves[i]
+                best_move = move
         return best_move
 
 
 
     @abstractmethod
     def move_action_decision(self, game_state: GameState, my_player_index: int) -> Position:
-        KNIGHT = (9, 6, 2, 1) #Health, Damage, Speed, Range
+        starting_point = (-1, -1)
+        if my_player_index == 0:
+            starting_point = (0, 0)
+        if my_player_index == 1:
+            starting_point = (9, 0)
+        if my_player_index == 2:
+            starting_point = (9, 9)
+        if my_player_index == 3:
+            starting_point = (0, 9)
+        player_list = game_state.player_state_list
+        current_stats = player_list[my_player_index].stat_set
+        health, damage, speed, rangee = player_list[my_player_index].health, current_stats.damage, current_stats.speed, current_stats.range
+        item_stats = str(player_list[my_player_index].item)
+        if item_stats == "Item.ANEMOI_WINGS":
+            speed += 1
+        if item_stats == "Item.RALLEY_BANNER":
+            damage += 2
+        if item_stats == "Item.HUNTING_SCOPE":
+            rangee += 1
         position = (game_state.player_state_list[my_player_index].position.x, game_state.player_state_list[my_player_index].position.y)
-        moves = DumbKnightStrategy.possible_moves_knight(position[0], position[1], KNIGHT[2])
+        if position == starting_point and player_list[my_player_index].gold > 8 and player_list[my_player_index].item == Item.NONE:
+            return Position(starting_point[0], starting_point[1])
+        moves = DumbKnightStrategy.possible_moves(position[0], position[1], speed)
         best_move = DumbKnightStrategy.most_central(moves)
         return Position(best_move[0], best_move[1])
 
@@ -93,20 +118,26 @@ class DumbKnightStrategy(Strategy):
     """
     @abstractmethod
     def attack_action_decision(self, game_state: GameState, my_player_index: int) -> int:
-        KNIGHT = (9, 6, 2, 1) #Health, Damage, Speed, Range
-        #WIZARD = (6, 4, 3, 2)
-        #ARCHER = (3, 2, 4, 3)
         player_list = game_state.player_state_list
+        current_stats = player_list[my_player_index].stat_set
+        health, damage, speed, rangee = player_list[my_player_index].health, current_stats.damage, current_stats.speed, current_stats.range
+        item_stats = str(player_list[my_player_index].item)
+        if item_stats == "Item.ANEMOI_WINGS":
+            speed += 1
+        if item_stats == "Item.RALLEY_BANNER":
+            damage += 2
+        if item_stats == "Item.HUNTING_SCOPE":
+            rangee += 1
         my_position = (player_list[my_player_index].position.x, player_list[my_player_index].position.y)
         in_range = [] #Players who are in range to hit
         can_kill = [] #Players who are in range and I can kill
         for i in range(len(player_list)):
             their_position = (player_list[i].position.x, player_list[i].position.y)
             d = max(abs(their_position[0] - my_position[0]), abs(their_position[1] - my_position[1]))
-            if d <= KNIGHT[3] and i != my_player_index:
+            if d <= rangee and i != my_player_index:
                 in_range.append(i)
                 health = player_list[i].health
-                if health <= KNIGHT[1]:
+                if health <= damage:
                     can_kill.append(i)
         if len(can_kill) >= 1:
             return can_kill[0]
@@ -126,6 +157,10 @@ class DumbKnightStrategy(Strategy):
     """
     @abstractmethod
     def buy_action_decision(self, game_state: GameState, my_player_index: int) -> Item:
+        player_list = game_state.player_state_list
+        gold = player_list[my_player_index].gold
+        if gold >= 8 and player_list[my_player_index].item == Item.NONE:
+            return Item.ANEMOI_WINGS
         return Item.NONE
 
 
