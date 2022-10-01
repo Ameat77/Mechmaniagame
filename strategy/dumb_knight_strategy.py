@@ -98,14 +98,16 @@ class DumbKnightStrategy(Strategy):
             speed += 1
         if item_stats == "Item.RALLEY_BANNER":
             damage += 2
-        if item_stats == "Item.HUNTING_SCOPE":
+        if item_stats == "Item.HUNTER_SCOPE":
             rangee += 1
         position = (game_state.player_state_list[my_player_index].position.x, game_state.player_state_list[my_player_index].position.y)
         if position == starting_point and player_list[my_player_index].gold > 8 and player_list[my_player_index].item == Item.NONE:
             return Position(starting_point[0], starting_point[1])
         moves = DumbKnightStrategy.possible_moves(position[0], position[1], speed)
+        moves.add((starting_point[0], starting_point[1]))
         best_move = DumbKnightStrategy.most_central(moves)
         return Position(best_move[0], best_move[1])
+        
 
 
     """Each turn, pick a player you would like to attack. Feel free to be a pacifist and attack no
@@ -126,7 +128,7 @@ class DumbKnightStrategy(Strategy):
             speed += 1
         if item_stats == "Item.RALLEY_BANNER":
             damage += 2
-        if item_stats == "Item.HUNTING_SCOPE":
+        if item_stats == "Item.HUNTER_SCOPE":
             rangee += 1
         my_position = (player_list[my_player_index].position.x, player_list[my_player_index].position.y)
         in_range = [] #Players who are in range to hit
@@ -139,10 +141,20 @@ class DumbKnightStrategy(Strategy):
                 health = player_list[i].health
                 if health <= damage:
                     can_kill.append(i)
+        most_points = -1
+        to_kill = -1
         if len(can_kill) >= 1:
-            return can_kill[0]
+            for index in can_kill:
+                if player_list[index].score > most_points:
+                    most_points = player_list[index].score
+                    to_kill = index
+            return to_kill
         if len(in_range) >= 1:
-            return in_range[0]
+            for index in in_range:
+                if player_list[index].score > most_points:
+                    most_points = player_list[index].score
+                    to_kill = index
+            return to_kill
         return None
 
 
@@ -160,7 +172,7 @@ class DumbKnightStrategy(Strategy):
         player_list = game_state.player_state_list
         gold = player_list[my_player_index].gold
         if gold >= 8 and player_list[my_player_index].item == Item.NONE:
-            return Item.ANEMOI_WINGS
+            return Item.HUNTER_SCOPE
         return Item.NONE
 
 
