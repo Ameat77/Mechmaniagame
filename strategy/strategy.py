@@ -6,7 +6,6 @@ from abc import abstractmethod
 from game.item import Item
 
 from game.position import Position
-from strategy.strategy import Strategy
 
 class Strategy(object):
     """Before the game starts, pick a class for your bot to start with.
