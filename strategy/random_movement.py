@@ -1,4 +1,4 @@
-from random import Random, random
+from random import Random
 from game.game_state import GameState
 from strategy.functions import getDist
 import game.character_class
