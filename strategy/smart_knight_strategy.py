@@ -39,7 +39,11 @@ class SmartKnightStrategy(Strategy):
         if (player_list[my_player_index].item == Item.SHIELD and position in center):
             return True
         if (player_list[my_player_index].item == Item.STRENGTH_POTION and position in center):
-            return True
+            prediction_dic = SmartKnightStrategy.everyones_moves(game_state, my_player_index)
+            for key in prediction_dic:
+                if key != my_player_index and (player_list[key].position.x, player_list[key].position.y) in center:
+                    return True
+            return False
 
 
     """Each turn, pick a position on the board that you want to move towards. Be careful not to
@@ -86,10 +90,9 @@ class SmartKnightStrategy(Strategy):
         return best_move
 
 
-
-    @abstractmethod
-    def move_action_decision(self, game_state: GameState, my_player_index: int) -> Position:
+    def everyones_moves(game_state: GameState, my_player_index: int):
         starting_point = (-1, -1)
+        prediction_dic = {}
         center = [(4, 4), (4, 5), (5, 4), (5, 5)]
         if my_player_index == 0:
             starting_point = (0, 0)
@@ -110,8 +113,9 @@ class SmartKnightStrategy(Strategy):
         if item_stats == "Item.HUNTER_SCOPE":
             rangee += 1
         position = (game_state.player_state_list[my_player_index].position.x, game_state.player_state_list[my_player_index].position.y)
-        if position == starting_point and player_list[my_player_index].gold >= 5 and player_list[my_player_index].item == Item.NONE:
-            return Position(starting_point[0], starting_point[1])
+        if position == starting_point and player_list[my_player_index].gold >= 8 and player_list[my_player_index].item == Item.NONE:
+            prediction_dic[my_player_index] = (starting_point[0], starting_point[1])
+            return prediction_dic
         moves = SmartKnightStrategy.possible_moves(position[0], position[1], speed)
         moves.add(starting_point)
       #  if health < 5:
@@ -151,9 +155,9 @@ class SmartKnightStrategy(Strategy):
         for move in moves:
             score = 0
             weight_danger = -20
-            weight_hits = 5
-            weight_dist_center = 8
-            weight_kill = 2
+            weight_hits = 0
+            weight_dist_center = 30
+            weight_kill = 5
             weight_in_center = 30
             can_hit = 0
             can_kill = 0
@@ -196,6 +200,15 @@ class SmartKnightStrategy(Strategy):
             if score_dic[key] > high_score:
                 high_score = score_dic[key]
                 the_move = key
+        prediction_dic[my_player_index] = the_move
+        return prediction_dic
+
+
+
+    @abstractmethod
+    def move_action_decision(self, game_state: GameState, my_player_index: int) -> Position:
+        prediction_dic = SmartKnightStrategy.everyones_moves(game_state, my_player_index)
+        the_move = prediction_dic[my_player_index]
         return Position(the_move[0], the_move[1])
 
                                     
