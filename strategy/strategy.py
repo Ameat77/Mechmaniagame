@@ -1,8 +1,12 @@
-from abc import abstractmethod
+from random import Random
 from game.game_state import GameState
+import game.character_class
+from abc import abstractmethod
+
 from game.item import Item
 
 from game.position import Position
+from strategy.strategy import Strategy
 
 class Strategy(object):
     """Before the game starts, pick a class for your bot to start with.
@@ -10,8 +14,8 @@ class Strategy(object):
     :returns: A game.CharacterClass Enum.
     """
     @abstractmethod
-    def strategy_initialize(self, my_player_index: int) -> None:
-        pass
+    def strategy_initialize(self, my_player_index: int):
+        return game.character_class.CharacterClass.WIZARD
 
     """Each turn, decide if you should use the item you're holding. Do not try to use the
     legendary Item.None!
